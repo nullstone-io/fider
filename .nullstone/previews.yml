@@ -1,0 +1,8 @@
+version: "0.1"
+
+apps:
+  fider:
+    capabilities:
+      postgres:
+        vars:
+          database_name: "{{ NULLSTONE_ORG }}-fider"
