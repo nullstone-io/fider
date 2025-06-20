@@ -1,0 +1,65 @@
+version: "0.1"
+
+subdomains:
+  fider-subdomain:
+    module: nullstone/autogen-aws-subdomain
+    dns_name: "{{ NULLSTONE_ORG }}-fider"
+
+apps:
+  fider:
+    module: nullstone/aws-fargate-service
+    vars:
+      num_tasks: 1
+      cpu: 256
+      memory: 512
+      port: 3000
+    connections:
+      cluster-namespace: namespace0
+    capabilities:
+      postgres:
+        module: nullstone/aws-postgres-access
+        connections:
+          postgres: postgres0
+      blobs:
+        module: nullstone/aws-s3-access
+        connections:
+          s3_bucket: blobs
+      jwt-key:
+        module: nullstone/jwt-keys
+    environment:
+      BASE_URL: "{{ NULLSTONE_ORG }}-fider.nullstone.app"
+      DATABASE_URL: "{{ POSTGRES_URL }}" # from nullstone/aws-postgres-access
+      JWT_SECRET: "{{ JWT_PRIVATE_KEY }}" # from nullstone/jwt-keys
+      BLOB_STORAGE_S3_BUCKET: "{{ S3_BUCKET_NAME }}" # from nullstone/aws-s3-access
+      BLOB_STORAGE_S3_REGION: "{{ S3_BUCKET_REGION }}" # from nullstone/aws-s3-access
+      # Update EMAIL env vars to enable mailer
+      EMAIL_NOREPLY: "noreply@fider-example.io"
+      EMAIL_SMTP_HOST: "smtp.fider-example.io"
+      EMAIL_SMTP_PORT: "587"
+      EMAIL_SMTP_USERNAME: ""
+      EMAIL_SMTP_PASSWORD: ""
+      EMAIL_SMTP_ENABLE_STARTTLS: "true"
+
+datastores:
+  postgres0:
+    module: nullstone/aws-rds-postgres
+    connections:
+      network: network0
+  blobs:
+    module: nullstone/aws-s3-bucket
+
+cluster_namespaces:
+  namespace0:
+    module: nullstone/aws-fargate-namespace
+    connections:
+      cluster: cluster0
+
+clusters:
+  cluster0:
+    module: nullstone/aws-fargate
+    connections:
+      network: network0
+
+networks:
+  network0:
+    module: nullstone/aws-network
